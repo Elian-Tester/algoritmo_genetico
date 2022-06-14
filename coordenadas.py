@@ -21,8 +21,8 @@ def calcularCoordenadas(listaIndividuos, rangoInicio, presicion, funcion):
     listaIndividuos = sorted(coordenadasOrdenado, key=lambda individuo: individuo[2], reverse=True)
 
     print("\nCordenada calculada:")
-    for x in listaIndividuos:
-        print(x)
+    """ for x in listaIndividuos:
+        print(x) """
     
     return listaIndividuos
 

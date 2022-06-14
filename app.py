@@ -60,11 +60,11 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.precisionText.setText("0.001")
         self.rangoInicioText.setText("-4")
         self.rangoFinText.setText("4")
-        self.poblacionMaximaText.setText("8")
+        self.poblacionMaximaText.setText("20")
         self.decendenciaText.setText("0.90")
-        self.mutacionIndividuoText.setText("0.2")
-        self.mutacionGenText.setText("0.2")
-        self.numGeneracionText.setText("2")
+        self.mutacionIndividuoText.setText("0.5")
+        self.mutacionGenText.setText("0.15")
+        self.numGeneracionText.setText("30")
         self.FuncionText.setText("0.75*cos(1.50*x)*sin(1.50*x)-0.25*cos(0.25*x) ")
         
 
@@ -72,8 +72,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         print("Generaciones")
         generaciones = int(self.numGeneracionText.text())
-        for num in range(generaciones):
-            #print("\nGeneracion: "+ str( num ))
+        for num in range(generaciones+1):
+            print("generacion:  ",num)
             arrayBits = self.NUEVA_GENERACION
 
             if ( len(self.NUEVA_GENERACION) == 0):
@@ -95,13 +95,88 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             
             limpiado = self.tipo_grafica(limpiado, self.maximoRadio.isChecked(), self.minimoRadio.isChecked())
 
-            self.guardarHistoricio( limpiado[1] )
+            self.guardarHistorico( limpiado[1] ) #envia individuos ordenado (max o min)
+
+            if limpiado[0]:  #status de poda boleano
+                print("Hay poda")
+                individuos_podado = self.Poda( limpiado[1] )
+
+                print("\nPodado")
+                """ for x in individuos_podado:
+                    print(x) """
+                
+                self.NUEVA_GENERACION = self.nuevaGeneracion(individuos_podado)
                 
 
-            if limpiado[0]:
-                print("Hay poda")
             else:
                 print("No hay poda")
+                self.NUEVA_GENERACION = self.nuevaGeneracion( limpiado[1] )
+        self.graficarHistorico()
+        self.crearVideo()
+        self.ID_IMAGES = 0
+
+    def crearVideo(self):
+        print("Creando video")
+        
+        numGeneraciones = int(self.numGeneracionText.text())
+
+        images = []
+        for index in range(1, numGeneraciones+1):
+            path = cv2.imread('graficas/Grafica_Generacion-'+ str( index ) + '.png')  
+            images.append(path)
+
+        alto, ancho = path.shape[:2]
+        video = cv2.VideoWriter("video/video_generaciones.mp4", cv2.VideoWriter_fourcc(*"mp4v"), 1, (ancho, alto))
+
+        for img in images:
+            video.write(img)
+
+        video.release()
+                
+    def nuevaGeneracion(self, individuos):        
+        print("\nNueva generacion:")
+        nueva_generacion = []
+
+        cont = 0
+        for x in individuos:            
+            nueva_generacion.append( [ cont, x[3], int( x[3], 2) ] )
+            cont += 1
+        
+        """ for x in nueva_generacion:
+            print(x) """
+        return nueva_generacion
+
+    def Poda(self, individuos):
+        print("\nPODA")
+
+        poblacionMaxima = int(self.poblacionMaximaText.text())
+        cant_individuos = len(individuos)
+        pp = poblacionMaxima / cant_individuos
+        self.infoPodaLabel.setText("poblacion maxima: "+str(poblacionMaxima)+"/ individuos: "+str(cant_individuos))
+        self.podaProbabilidad.setText(str(pp))
+
+        print(pp)
+        print("\nOriginal: ", len(individuos))
+        
+        cont_aux = 0
+        for x in individuos:
+            if(cont_aux>2):
+                probabilidadPoda = (random.randint(1, 100)) / 100                
+                if probabilidadPoda > pp:
+                    individuos.remove(x)
+            cont_aux += 1
+
+        print("\nDespues de PP: ", len(individuos))
+
+        if len(individuos) > poblacionMaxima:
+
+            podado = individuos[:poblacionMaxima]
+                
+            self.graficarGeneracion(podado)
+
+            return podado
+
+        return individuos
 
 
     def Calcular(self):
@@ -114,12 +189,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         return [poblacionInicial, float(precision), int(rangoInicio),int(rangoFin)]
 
-
-
     def seleccionTcT(self, arrayBits):
         print("\nTodos con Todos : ____________________________________________________")
-        for x in arrayBits:
-            print(x)
+        """ for x in arrayBits:
+            print(x) """
         #print( self.NUEVA_GENERACION)
         if ( len(self.NUEVA_GENERACION) > 0 ):
             arrayBits = self.NUEVA_GENERACION
@@ -137,8 +210,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 seleccion.append(combinacion)        
             auxDisminuir+=1
         print("\nSeleccion TcT:")
-        for x in seleccion:
-            print(x)        
+        """ for x in seleccion:
+            print(x)   """      
 
         probabDecendencia = self.decendenciaText.text()        
 
@@ -227,8 +300,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def limpieza(self, listHijos, arrayBits):
         print("\nlimpieza: ")
-        for x in listHijos:
-            print(x)        
+        """ for x in listHijos:
+            print(x)     """    
 
         rango = float(self.CantidadSolucionesLabel.text()) - 1        
 
@@ -237,8 +310,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 arrayBits.append([ hijo[0] , hijo[1], hijo[3]])  #arrayBits (contiene a los padres) y se está agregando los hijos dentro del rango a los padres
         
         print("\narray bits (dentro de rango)")
-        for x in arrayBits:
-            print(x)
+        """ for x in arrayBits:
+            print(x) """
 
         poblacionMaxima = self.poblacionMaximaText.text()
         
@@ -249,8 +322,8 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         arrayBits = coordenadas.calcularNumABits(arrayBits)
         
         print("\nnum bit recalculado:")
-        for x in arrayBits:
-            print(x)
+        """ for x in arrayBits:
+            print(x) """
 
         rangoInicio = int(self.rangoInicioText.text())
         presicion = float(self.precisionText.text())
@@ -264,10 +337,10 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
             #print("\nNo ocupa PODA ")            
             return [False, arrayBits]
     
-    def guardarHistoricio(self, individuos_totales ):
+    def guardarHistorico(self, individuos_totales ):
         print("\nGuarda para historico:")
-        for x in individuos_totales:
-            print(x)
+        """ for x in individuos_totales:
+            print(x) """
 
         maximo = individuos_totales[0][2]
         minimo = individuos_totales[-1][2]
@@ -277,9 +350,9 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
         self.PEORES_GENERACION.append(minimo)
         self.PROMEDIO_GENERACION.append(promedio)
 
-        print( "\nMax: ", str(maximo) )
+        """ print( "\nMax: ", str(maximo) )
         print( "Min: ", str(minimo) )
-        print( "Prom: ", str(promedio) )
+        print( "Prom: ", str(promedio) ) """
 
     def tipo_grafica(self, limpiado, RadioMax, RadioMin):
         if ( RadioMax==False and RadioMin==False ):
@@ -296,6 +369,67 @@ class MyApp(QtWidgets.QMainWindow, Ui_MainWindow):
                 limpiado[1] = sorted( limpiado[1], key=lambda individuo: individuo[2], reverse=False)                    
         
         return limpiado
+
+    
+    def graficarGeneracion(self, podado):
+        print("\nGrafica generacion: ")
+
+        """ for x in podado:
+            print(x) """
+
+        xPoda = [x[1] for x in podado]
+        yPoda = [x[2] for x in podado]
+
+        self.ID_IMAGES+=1
+        fig = plt.figure()
+            #fig.tight_layout()
+        plt.subplot(1, 1, 1)
+            
+        if self.BANDERA_MAX == True:
+            plt.title("Generacion: "+ str(self.ID_IMAGES) +" | MAXIMO" )
+        if self.BANDERA_MAX == False:
+            plt.title("Generacion: "+ str(self.ID_IMAGES) +" | MINIMO" )
+
+        plt.xlim(-4, -3.3)
+        plt.ylim(0, 0.3)
+        plt.scatter(xPoda,yPoda, label='Poda')            
+        plt.legend()                    
+        
+        plt.savefig("graficas/Grafica_Generacion-"+ str( self.ID_IMAGES ) + ".png")            
+        
+        plt.close() 
+
+
+
+    def graficarHistorico(self):
+        print("\nGrafica Historico: ")
+
+        print("\nMejor")
+        """ for x in self.MEJORES_GENERACION:
+            print(x) """
+        yMax =  [x for x in self.MEJORES_GENERACION]
+        yMin =  [x for x in self.PEORES_GENERACION]
+        yProm = [x for x in self.PROMEDIO_GENERACION]
+
+        xGen = [x for x in range( len(self.MEJORES_GENERACION) )]
+        
+
+        #plt.figure(figsize=(10,5))
+        #fig.tight_layout()
+        plt.subplot(1, 1, 1)
+        plt.plot(xGen,yMax, label='Mejor')
+        plt.plot(xGen,yMin, label='Peor')
+        plt.plot(xGen,yProm, label='Promedio')
+
+        plt.legend()        
+        plt.show()
+
+        self.MEJORES_GENERACION.clear()
+        self.PEORES_GENERACION.clear()        
+        self.NUEVA_GENERACION.clear()
+        self.BANDERA_FIN_HISTORICO = True
+        self.ITERACION_GENERACION = 1
+        self.ID_IMAGES=0
 
 
 if __name__ == "__main__":
